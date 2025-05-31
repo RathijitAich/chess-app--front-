@@ -1,38 +1,122 @@
-.App {
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.header {
   text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.header h1 {
+  color: #2c3e50;
+  margin-bottom: 10px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.game-info {
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.player-turn {
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.game-status {
+  font-size: 1.5rem;
+  color: #e74c3c;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+.game-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+}
+
+.board-container {
+  flex: 0 0 600px;
+}
+
+.game-controls {
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.move-history {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  height: 450px;
+  overflow-y: auto;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.move-history h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+  color: #2c3e50;
+}
+
+.history-list ul {
+  list-style: none;
+  padding-left: 10px;
+}
+
+.history-list li {
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 5px;
+  font-family: monospace;
+}
+
+.reset-button {
+  margin-top: 20px;
+  padding: 12px 20px;
+  background-color: #3498db;
   color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.App-link {
-  color: #61dafb;
+.reset-button:hover {
+  background-color: #2980b9;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 992px) {
+  .game-container {
+    flex-direction: column;
+    align-items: center;
   }
-  to {
-    transform: rotate(360deg);
+  
+  .board-container {
+    margin-bottom: 20px;
+  }
+  
+  .game-controls {
+    width: 100%;
   }
 }
