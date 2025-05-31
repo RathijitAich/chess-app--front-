@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
-import "./App.css"; // We'll create this file for styling
+import { useNavigate } from "react-router-dom";
+import "./App.css";
+
 
 
 async function fetchBestMove(fen) {
@@ -17,13 +19,29 @@ async function fetchBestMove(fen) {
   return data.move;
 }
 
-
 function App() {
+  const navigate = useNavigate();
   const [game, setGame] = useState(new Chess());
   const [gameHistory, setGameHistory] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState("white");
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [optionSquares, setOptionSquares] = useState({});
+  const [gameStatus, setGameStatus] = useState("");
+
+  useEffect(() => {
+    // Update game status whenever the game state changes
+    if (game.isGameOver()) {
+      if (game.isCheckmate()) {
+        setGameStatus(`Checkmate! ${currentPlayer === "white" ? "Black" : "White"} wins!`);
+      } else if (game.isDraw()) {
+        setGameStatus("Draw!");
+      } else {
+        setGameStatus("Game Over!");
+      }
+    } else {
+      setGameStatus("");
+    }
+  }, [game, currentPlayer]);
 
   // Function to highlight legal moves for a piece
   function highlightLegalMoves(square) {
@@ -40,11 +58,24 @@ function App() {
         
         // Mark all legal target squares
         legalMoves.forEach(move => {
-          moves[move.to] = {
-            background: 'rgba(0, 128, 0, 0.4)',
-            borderRadius: '50%',
-          };
+          // Different style for captures vs empty squares
+          if (move.captured) {
+            moves[move.to] = {
+              background: 'rgba(255, 0, 0, 0.3)',
+              borderRadius: '50%',
+            };
+          } else {
+            moves[move.to] = {
+              background: 'rgba(0, 128, 0, 0.4)',
+              borderRadius: '50%',
+            };
+          }
         });
+        
+        // Highlight the selected piece
+        moves[square] = {
+          background: 'rgba(255, 255, 0, 0.4)',
+        };
         
         setOptionSquares(moves);
       } else {
@@ -80,24 +111,26 @@ function App() {
 
     // Bot's move
     setTimeout(async () => {
-      const fen = newGame.fen();
-      const bestMove = await fetchBestMove(fen);
-      console.log("Best Move:", bestMove);
-      
-      if (bestMove) {
-        const botMove = newGame.move({
-          from: bestMove.slice(0, 2),
-          to: bestMove.slice(2, 4),
-          promotion: "q",
-        });
+      if (!newGame.isGameOver()) {
+        const fen = newGame.fen();
+        const bestMove = await fetchBestMove(fen);
+        console.log("Best Move:", bestMove);
+        
+        if (bestMove) {
+          const botMove = newGame.move({
+            from: bestMove.slice(0, 2),
+            to: bestMove.slice(2, 4),
+            promotion: bestMove.length > 4 ? bestMove[4] : "q",
+          });
 
-        if (botMove) {
-          setGame(new Chess(newGame.fen()));
-          setGameHistory((prev) => [...prev, botMove]);
-          setCurrentPlayer("white");
+          if (botMove) {
+            setGame(new Chess(newGame.fen()));
+            setGameHistory((prev) => [...prev, botMove]);
+            setCurrentPlayer("white");
+          }
         }
       }
-    }, 300);
+    }, 500);
 
     return true;
   }
@@ -107,38 +140,38 @@ function App() {
     return makeMove(sourceSquare, targetSquare);
   }
 
+  // For click-to-move functionality
   function onSquareClick(square) {
-  if (!selectedPiece) {
-    // No piece selected yet — try to select a piece
-    highlightLegalMoves(square);
-  } else if (selectedPiece === square) {
-    // Clicked the same piece — deselect
-    setSelectedPiece(null);
-    setOptionSquares({});
-  } else {
-    const piece = game.get(square);
-    const selectedPieceDetails = game.get(selectedPiece);
-
-    // If clicked on another of your own pieces, switch selection
-    if (
-      piece &&
-      selectedPieceDetails &&
-      piece.color === selectedPieceDetails.color &&
-      piece.color === "w" // Only allow white to move
-    ) {
+    if (!selectedPiece) {
+      // No piece selected yet — try to select a piece
       highlightLegalMoves(square);
+    } else if (selectedPiece === square) {
+      // Clicked the same piece — deselect
+      setSelectedPiece(null);
+      setOptionSquares({});
     } else {
-      // Attempt to move to the clicked square
-      const moveSuccess = makeMove(selectedPiece, square);
+      const piece = game.get(square);
+      const selectedPieceDetails = game.get(selectedPiece);
 
-      // If move fails (invalid target), maybe allow selection again
-      if (!moveSuccess) {
+      // If clicked on another of your own pieces, switch selection
+      if (
+        piece &&
+        selectedPieceDetails &&
+        piece.color === selectedPieceDetails.color &&
+        piece.color === "w" // Only allow white to move
+      ) {
         highlightLegalMoves(square);
+      } else {
+        // Attempt to move to the clicked square
+        makeMove(selectedPiece, square).then((moveSuccess) => {
+          // If move fails (invalid target), maybe allow selection again
+          if (!moveSuccess) {
+            highlightLegalMoves(square);
+          }
+        });
       }
     }
   }
-}
-
 
   function resetGame() {
     setGame(new Chess());
@@ -146,19 +179,23 @@ function App() {
     setCurrentPlayer("white");
     setSelectedPiece(null);
     setOptionSquares({});
+    setGameStatus("");
   }
 
   return (
     <div className="app-container">
+      <div className="bot-button-container">
+        <span>Would you like to play with Rathijit's advanced chess bot?</span>
+        <button className="bot-button" onClick={() => navigate("/rathijit-bot")}>
+          Play with Rathjit Bot
+        </button>
+      </div>
+      
       <div className="header">
         <h1>Chess Master</h1>
         <div className="game-info">
           <span className="player-turn">Current Turn: <strong>{currentPlayer}</strong></span>
-          {game.isGameOver() && (
-            <div className="game-status">
-              {game.isCheckmate() ? "Checkmate!" : game.isDraw() ? "Draw!" : "Game Over!"}
-            </div>
-          )}
+          {gameStatus && <div className="game-status">{gameStatus}</div>}
         </div>
       </div>
 
@@ -170,11 +207,12 @@ function App() {
             onSquareClick={onSquareClick}
             boardWidth={600}
             customBoardStyle={{
-              borderRadius: "4px",
-              boxShadow: "0 5px 15px rgba(0, 0, 0, 0.5)"
+              borderRadius: "8px",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)"
             }}
             customSquareStyles={optionSquares}
             areArrowsAllowed={true}
+            animationDuration={300}
           />
         </div>
 
@@ -185,8 +223,8 @@ function App() {
               {gameHistory.length > 0 ? (
                 <ul>
                   {gameHistory.map((move, index) => (
-                    <li key={index}>
-                      {index % 2 === 0 ? Math.ceil((index + 1) / 2) + ". " : ""}
+                    <li key={`${move.from}-${move.to}-${move.san}-${index}`}>
+                      {index % 2 === 0 ? Math.ceil((index + 1) / 2) + "." : ""}
                       {move.san}
                     </li>
                   ))}
